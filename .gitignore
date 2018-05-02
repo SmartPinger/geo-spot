@@ -8,3 +8,7 @@
 /build
 /captures
 .externalNativeBuild
+
+keystores/geospot_release\.jks
+
+keystores/keystore\.properties
