@@ -1,8 +1,14 @@
 apply plugin: 'com.android.application'
-
 apply plugin: 'kotlin-android'
-
 apply plugin: 'kotlin-android-extensions'
+
+def computeNewVersionCode = { ->
+    def newVersionCode = (int) (System.currentTimeMillis()/1000)
+    ant.propertyfile(file: "version.properties") {
+        entry(key: "VERSION_CODE", value: newVersionCode)
+    }
+    return newVersionCode
+}
 
 android {
     compileSdkVersion 27
@@ -14,11 +20,47 @@ android {
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
+
+    signingConfigs {
+        beta {
+            def Properties keyProps = new Properties();
+            keyProps.load(new FileInputStream('keystores/keystore_debug.properties'))
+            storeFile       file('../keystores/' + keyProps['storeFile'])
+            storePassword   keyProps['storePassword']
+            keyAlias        keyProps['keyAlias']
+            keyPassword     keyProps['keyPassword']
+        }
+        production {
+            def Properties keyProps = new Properties();
+            keyProps.load(new FileInputStream('keystores/keystore.properties'))
+            storeFile       file('../keystores/' + keyProps['storeFile'])
+            storePassword   keyProps['storePassword']
+            keyAlias        keyProps['keyAlias']
+            keyPassword     keyProps['keyPassword']
+        }
+    }
+
     buildTypes {
+        debug {
+            minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.beta
+            resValue "string", "app_name", "Geospot Debug"
+        }
+
         release {
             minifyEnabled false
+            shrinkResources false
+            signingConfig signingConfigs.production
+            resValue "string", "app_name", "Geospot"
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+    }
+
+    // applicationVariants are e.g. debug, release
+    applicationVariants.all { variant ->
+        def flavor = variant.mergedFlavor
+        flavor.versionCode = computeNewVersionCode()
     }
 }
 
